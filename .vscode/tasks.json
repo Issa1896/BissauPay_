@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend - BissauPay",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/bissaupay" },
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "reveal": "always",
+        "group": "bissaupay",
+        "name": "Backend :3000"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend - BissauPay",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/bissaupay-web" },
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "reveal": "always",
+        "group": "bissaupay",
+        "name": "Frontend :5173"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Iniciar BissauPay (Backend + Frontend)",
+      "dependsOn": ["Backend - BissauPay", "Frontend - BissauPay"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

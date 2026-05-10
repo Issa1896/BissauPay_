@@ -1,0 +1,12 @@
+{
+  "appId": "com.bissaupay.app",
+  "appName": "BissauPay",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
