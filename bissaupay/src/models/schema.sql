@@ -52,6 +52,7 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 CREATE TABLE IF NOT EXISTS users (
   id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   phone               VARCHAR(20) UNIQUE NOT NULL,
+  email               VARCHAR(255) UNIQUE,
   full_name           VARCHAR(120) NOT NULL,
   pin_hash            VARCHAR(255) NOT NULL,
   status              user_status DEFAULT 'pending',

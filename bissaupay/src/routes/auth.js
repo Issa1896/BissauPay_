@@ -24,6 +24,10 @@ const generateToken = (userId) =>
 // ─────────────────────────────────────────────────────────────
 router.post('/register',
   [
+    body('email')
+      .optional({ values: 'falsy' })
+      .isEmail().normalizeEmail()
+      .withMessage('Email inválido'),
     body('phone')
       .customSanitizer(v => v.replace(/[^\d+]/g, '').replace(/^(\+?)(.*)/, (_, p, n) => p + n.replace(/\+/g, '')))
       .matches(/^\+?[0-9]{7,15}$/)
@@ -38,7 +42,7 @@ router.post('/register',
   async (req, res, next) => {
     if (validate(req, res)) return
 
-    const { phone, full_name, pin } = req.body
+    const { email, phone, full_name, pin } = req.body
 
     try {
       const existing = await query(
@@ -59,13 +63,20 @@ router.post('/register',
         return res.status(409).json({ success: false, error: 'Este número já está registado' })
       }
 
+      if (email) {
+        const emailExists = await query(`SELECT id FROM users WHERE email = $1`, [email])
+        if (emailExists.rows.length > 0) {
+          return res.status(409).json({ success: false, error: 'Este email já está registado' })
+        }
+      }
+
       const pinHash = await bcrypt.hash(pin, 12)
 
       await withTransaction(async (client) => {
         const userResult = await client.query(
-          `INSERT INTO users (phone, full_name, pin_hash, status)
-           VALUES ($1, $2, $3, 'pending') RETURNING id`,
-          [phone, full_name.trim(), pinHash]
+          `INSERT INTO users (phone, email, full_name, pin_hash, status)
+           VALUES ($1, $2, $3, $4, 'pending') RETURNING id`,
+          [phone, email || null, full_name.trim(), pinHash]
         )
         const userId = userResult.rows[0].id
 
@@ -77,13 +88,13 @@ router.post('/register',
         await client.query(
           `INSERT INTO audit_log (user_id, action, new_data)
            VALUES ($1, 'USER_REGISTERED', $2)`,
-          [userId, JSON.stringify({ phone, full_name })]
+          [userId, JSON.stringify({ phone, email, full_name })]
         )
       })
 
       await createOTP(phone, 'register')
 
-      logger.info('Novo utilizador registado', { phone })
+      logger.info('Novo utilizador registado', { phone, email })
 
       res.status(201).json({
         success:  true,
@@ -168,19 +179,24 @@ router.post('/verify-otp',
 // ─────────────────────────────────────────────────────────────
 router.post('/login',
   [
-    body('phone').customSanitizer(v => v.replace(/[^\d+]/g, '').replace(/^(\+?)(.*)/, (_, p, n) => p + n.replace(/\+/g, ''))).matches(/^\+?[0-9]{7,15}$/),
+    body('phone')
+      .customSanitizer(v => v.replace(/[^\d+]/g, '').replace(/^(\+?)(.*)/, (_, p, n) => p + n.replace(/\+/g, '')))
+      .customSanitizer(v => v || undefined),
+    body('email').optional({ values: 'falsy' }).isEmail().normalizeEmail(),
     body('pin').isLength({ min: 4, max: 6 }).isNumeric(),
   ],
   async (req, res, next) => {
     if (validate(req, res)) return
 
-    const { phone, pin } = req.body
+    const { phone, email, pin } = req.body
 
     try {
       const userResult = await query(
         `SELECT id, pin_hash, status, failed_pin_attempts, locked_until
-         FROM users WHERE phone = $1`,
-        [phone]
+         FROM users WHERE ${
+           email ? 'email = $1' : 'phone = $1'
+         }`,
+        [email || phone]
       )
 
       // Resposta genérica para não revelar se o número existe
@@ -219,7 +235,7 @@ router.post('/login',
            shouldLock ? new Date(Date.now() + 30 * 60_000) : null,
            user.id]
         )
-        logger.warn('PIN incorreto', { phone, attempts: newAttempts })
+        logger.warn('PIN incorreto', { identifier: email || phone, attempts: newAttempts })
 
         return res.status(401).json({
           success: false,
@@ -236,7 +252,7 @@ router.post('/login',
       )
       await createOTP(phone, 'login')
 
-      logger.info('Login iniciado — OTP enviado', { phone })
+      logger.info('Login iniciado — OTP enviado', { identifier: email || phone })
 
       res.json({
         success:  true,
@@ -354,7 +370,7 @@ router.post('/logout', authenticate, async (req, res, next) => {
 router.get('/me', authenticate, async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT u.id, u.phone, u.full_name, u.status, u.level, u.language,
+      `SELECT u.id, u.phone, u.email, u.full_name, u.status, u.level, u.language,
               u.kyc_status, u.kyc_verified_at, u.created_at,
               w.balance, w.daily_limit, w.daily_spent, w.is_frozen
        FROM users u JOIN wallets w ON w.user_id = u.id
@@ -370,6 +386,7 @@ router.get('/me', authenticate, async (req, res, next) => {
       data: {
         id:          u.id,
         phone:       u.phone,
+        email:       u.email,
         name:        u.full_name,
         status:      u.status,
         level:       u.level,

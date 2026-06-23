@@ -19,6 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   const [phone,    setPhone]    = useState('')
+  const [email,    setEmail]    = useState('')
   const [pin,      setPin]      = useState('')
   const [fullName, setFullName] = useState('')
   const [otp,      setOtp]      = useState('')
@@ -41,7 +42,7 @@ export default function Login() {
     if (pin.length < 4) return toast.error('PIN deve ter pelo menos 4 dígitos')
     setLoading(true)
     try {
-      await authAPI.register({ phone, pin, full_name: fullName })
+      await authAPI.register({ phone, email: email || undefined, pin, full_name: fullName })
       toast.success('Código enviado por SMS')
       setStep(STEP.REG_OTP)
     } catch (err) { toast.error(err.message) }
@@ -155,6 +156,11 @@ export default function Login() {
                 <label className="input-label">Nome completo</label>
                 <input className="input" type="text" placeholder="O seu nome completo"
                   value={fullName} onChange={e => setFullName(e.target.value)} required />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Email</label>
+                <input className="input" type="email" placeholder="seu@email.com"
+                  value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="input-group">
                 <label className="input-label">Número de telefone</label>
