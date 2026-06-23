@@ -22,10 +22,11 @@ app.use(helmet({
 }))
 
 // ── CORS ─────────────────────────────────────────────────────
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
+const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+const allowedOrigins = (process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'])
+  .concat(vercelUrl ? [vercelUrl] : [])
 app.use(cors({
   origin: (origin, cb) => {
-    // Permite requests sem origin (ex: Postman, mobile apps)
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       return cb(null, true)
     }
