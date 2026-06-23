@@ -1,0 +1,13 @@
+{
+  "buildCommand": "cd bissaupay-web && npm install && npm run build",
+  "outputDirectory": "bissaupay-web/dist",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
