@@ -53,7 +53,7 @@ router.post('/register',
       if (existing.rows.length > 0) {
         const user = existing.rows[0]
         if (user.status === 'pending') {
-          await createOTP(phone, 'register')
+          await createOTP(phone, 'register', req.body.email)
           return res.json({
             success: true,
             message: 'Código de verificação reenviado',
@@ -250,7 +250,8 @@ router.post('/login',
         `UPDATE users SET failed_pin_attempts = 0, locked_until = NULL WHERE id = $1`,
         [user.id]
       )
-      await createOTP(phone, 'login')
+      const userEmail = email || (await query(`SELECT email FROM users WHERE id = $1`, [user.id])).rows[0]?.email
+      await createOTP(phone, 'login', userEmail)
 
       logger.info('Login iniciado — OTP enviado', { identifier: email || phone })
 
@@ -275,7 +276,7 @@ body('phone').customSanitizer(v => v.replace(/[^\d+]/g, '').replace(/^(\+?)(.*)/
   async (req, res, next) => {
     if (validate(req, res)) return
     try {
-      await createOTP(req.body.phone, req.body.purpose)
+      await createOTP(req.body.phone, req.body.purpose, req.body.email)
       res.json({ success: true, message: 'Código reenviado' })
     } catch (err) {
       next(err)
@@ -296,7 +297,8 @@ router.post('/reset-pin/request',
         // Resposta genérica por segurança
         return res.json({ success: true, message: 'Se o número existir, um código será enviado' })
       }
-      await createOTP(req.body.phone, 'reset_pin')
+      const userEmail = (await query(`SELECT email FROM users WHERE phone = $1`, [req.body.phone])).rows[0]?.email
+      await createOTP(req.body.phone, 'reset_pin', userEmail)
       res.json({ success: true, message: 'Código de redefinição enviado', nextStep: 'verify_otp' })
     } catch (err) {
       next(err)
