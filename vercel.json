@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd bissaupay-web && npm install && npm run build",
+  "buildCommand": "cd bissaupay-web && npm run build",
   "outputDirectory": "bissaupay-web/dist",
   "functions": {
     "api/index.js": {
