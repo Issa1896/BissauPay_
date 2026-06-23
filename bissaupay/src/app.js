@@ -127,8 +127,8 @@ if (require.main === module) {
       logger.error('❌ Falha na conexão com PostgreSQL', { error: db.error })
     }
 
-    // Iniciar jobs automáticos em produção
-    if (process.env.NODE_ENV === 'production') {
+    // Iniciar jobs automáticos em produção (não na Vercel serverless)
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
       require('./jobs/cronJobs').start()
       logger.info('⏰ Cron jobs iniciados')
     }

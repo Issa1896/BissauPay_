@@ -5,10 +5,6 @@ const { createLogger, format, transports } = require('winston')
 const path = require('path')
 const fs   = require('fs')
 
-// Garantir que o diretório de logs existe
-const logDir = path.dirname(process.env.LOG_FILE || 'logs/bissaupay.log')
-if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
-
 // Formato para o console (colorido e legível)
 const consoleFormat = format.combine(
   format.colorize({ all: true }),
@@ -45,17 +41,19 @@ const logger = createLogger({
   ],
 })
 
-// Em produção: adicionar log em arquivo com rotação
-if (process.env.NODE_ENV === 'production') {
+// Em produção: adicionar log em arquivo com rotação (apenas se escrevível)
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
+  const logDir = path.dirname(process.env.LOG_FILE || 'logs/bissaupay.log')
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
+
   logger.add(new transports.File({
     filename: process.env.LOG_FILE || 'logs/bissaupay.log',
     format:   fileFormat,
-    maxsize:  10 * 1024 * 1024,  // 10MB por arquivo
+    maxsize:  10 * 1024 * 1024,
     maxFiles: 10,
     tailable: true,
   }))
 
-  // Arquivo separado só para erros
   logger.add(new transports.File({
     filename: 'logs/errors.log',
     level:    'error',
