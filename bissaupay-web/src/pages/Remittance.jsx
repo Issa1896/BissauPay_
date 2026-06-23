@@ -84,7 +84,7 @@ export default function Remittance() {
         setStep('done')
         toast.success('Remessa enviada!')
       } else {
-        toast.error(res.error)
+        toast.error(typeof res.error === 'string' ? res.error : res.error?.message || 'Erro')
         if (res.refunded) toast.info('Saldo reembolsado automaticamente')
         setStep('form')
       }

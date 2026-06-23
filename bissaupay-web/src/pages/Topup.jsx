@@ -52,7 +52,7 @@ export default function Topup() {
       const res = await topupAPI.execute({ provider_id: selected.id, amount: amountInt, recipient })
       if (res.success) { setResult(res.data); setStep('done'); toast.success('Recarga realizada!') }
       else {
-        toast.error(res.error || 'Recarga falhou')
+        toast.error(typeof res.error === 'string' ? res.error : res.error?.message || 'Recarga falhou')
         if (res.refunded) toast.info('Saldo reembolsado automaticamente')
         setStep('form')
       }

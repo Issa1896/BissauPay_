@@ -27,9 +27,9 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status  = error.response?.status
-    const message = error.response?.data?.error
-      || error.response?.data?.message
-      || error.message
+    const data    = error.response?.data
+    const raw     = data?.error || data?.message || error.message
+    const message = typeof raw === 'string' ? raw : raw?.message || 'Erro desconhecido'
 
     if (status === 401) {
       localStorage.removeItem('bp_token')
