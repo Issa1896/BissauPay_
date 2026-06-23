@@ -4,19 +4,29 @@
 const { Pool } = require('pg')
 const logger   = require('./logger')
 
-const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     parseInt(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME     || 'bissaupay',
-  user:     process.env.DB_USER     || 'bissaupay_user',
-  password: process.env.DB_PASSWORD,
-  max:      parseInt(process.env.DB_POOL_MAX) || 10,
-  idleTimeoutMillis:    30_000,
-  connectionTimeoutMillis: 60_000,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: true }
-    : false,
-})
+const poolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      max:      parseInt(process.env.DB_POOL_MAX) || 5,
+      idleTimeoutMillis:    30_000,
+      connectionTimeoutMillis: 60_000,
+      ssl: { rejectUnauthorized: true },
+    }
+  : {
+      host:     process.env.DB_HOST     || 'localhost',
+      port:     parseInt(process.env.DB_PORT) || 5432,
+      database: process.env.DB_NAME     || 'bissaupay',
+      user:     process.env.DB_USER     || 'bissaupay_user',
+      password: process.env.DB_PASSWORD,
+      max:      parseInt(process.env.DB_POOL_MAX) || 10,
+      idleTimeoutMillis:    30_000,
+      connectionTimeoutMillis: 60_000,
+      ssl: process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: true }
+        : false,
+    }
+
+const pool = new Pool(poolConfig)
 
 pool.on('error', (err) => {
   logger.error('Erro inesperado no pool PostgreSQL', { error: err.message })
