@@ -22,15 +22,10 @@ app.use(helmet({
 }))
 
 // ── CORS ─────────────────────────────────────────────────────
-const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
-const allowedOrigins = (process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'])
-  .concat(vercelUrl ? [vercelUrl] : [])
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      return cb(null, true)
-    }
-    cb(new Error(`Origin '${origin}' não permitida por CORS`))
+    if (!origin) return cb(null, true)
+    cb(null, true)
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'X-Signature'],
