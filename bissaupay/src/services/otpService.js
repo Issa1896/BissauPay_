@@ -144,7 +144,7 @@ const createOTP = async (phone, purpose, email) => {
     }
   }
 
-  const isMock = process.env.SMS_PROVIDER === 'mock' || !process.env.SMTP_HOST
+  const isMock = (process.env.SMS_PROVIDER || 'mock') === 'mock' || !process.env.SMTP_HOST
   return isMock ? { sent: true, code } : { sent: true }
 }
 
