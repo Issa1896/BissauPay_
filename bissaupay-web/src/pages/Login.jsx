@@ -23,6 +23,7 @@ export default function Login() {
   const [pin,      setPin]      = useState('')
   const [fullName, setFullName] = useState('')
   const [otp,      setOtp]      = useState('')
+  const [debugOtp, setDebugOtp] = useState('')
 
   if (isAuthenticated) return <Navigate to="/" replace />
 
@@ -42,7 +43,8 @@ export default function Login() {
     if (pin.length < 4) return toast.error('PIN deve ter pelo menos 4 dígitos')
     setLoading(true)
     try {
-      await authAPI.register({ phone, email: email || undefined, pin, full_name: fullName })
+      const res = await authAPI.register({ phone, email: email || undefined, pin, full_name: fullName })
+      if (res.debug_code) setDebugOtp(res.debug_code)
       toast.success('Código enviado por SMS')
       setStep(STEP.REG_OTP)
     } catch (err) { toast.error(err.message) }
@@ -96,6 +98,11 @@ export default function Login() {
               <p className="text-muted text-sm" style={{ marginTop: 4 }}>
                 Enviámos 6 dígitos para <strong style={{ color: 'var(--warm-100)' }}>{phone}</strong>
               </p>
+              {debugOtp && (
+                <p style={{ marginTop: 8, background: '#f0f0f0', padding: '8px 16px', borderRadius: 8, fontFamily: 'monospace', fontSize: 20, letterSpacing: 4, color: '#0D1B14' }}>
+                  {debugOtp}
+                </p>
+              )}
             </div>
             <form onSubmit={handleVerifyOTP} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <OTPInput value={otp} onChange={setOtp} />
