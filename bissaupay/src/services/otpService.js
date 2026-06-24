@@ -151,16 +151,21 @@ const createOTP = async (phone, purpose, email) => {
 const verifyOTP = async (phone, code, purpose) => {
   const maxAttempts = parseInt(process.env.OTP_MAX_ATTEMPTS) || 3
 
+  const phones = phone.startsWith('+')
+    ? [phone, phone.substring(1)]
+    : [phone, `+${phone}`]
+
   const result = await query(
     `SELECT id, code, attempts, expires_at, used
      FROM otp_codes
-     WHERE phone = $1 AND purpose = $2 AND used = FALSE
+     WHERE phone = ANY($1::varchar[]) AND purpose = $2 AND used = FALSE
      ORDER BY created_at DESC
      LIMIT 1`,
-    [phone, purpose]
+    [phones, purpose]
   )
 
   if (result.rows.length === 0) {
+    logger.warn('verifyOTP: sem OTP encontrado', { phones, purpose })
     return { valid: false, reason: 'OTP não encontrado ou já utilizado' }
   }
 
