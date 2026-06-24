@@ -53,11 +53,12 @@ router.post('/register',
       if (existing.rows.length > 0) {
         const user = existing.rows[0]
         if (user.status === 'pending') {
-          await createOTP(phone, 'register', req.body.email)
+          const otpResult = await createOTP(phone, 'register', req.body.email)
           return res.json({
             success: true,
             message: 'Código de verificação reenviado',
             nextStep: 'verify_otp',
+            ...(otpResult.code && { debug_code: otpResult.code }),
           })
         }
         return res.status(409).json({ success: false, error: 'Este número já está registado' })
@@ -92,7 +93,7 @@ router.post('/register',
         )
       })
 
-      await createOTP(phone, 'register')
+      const otpResult = await createOTP(phone, 'register', email)
 
       logger.info('Novo utilizador registado', { phone, email })
 
@@ -100,6 +101,7 @@ router.post('/register',
         success:  true,
         message:  'Código de verificação enviado por SMS',
         nextStep: 'verify_otp',
+        ...(otpResult.code && { debug_code: otpResult.code }),
       })
     } catch (err) {
       next(err)
@@ -251,7 +253,7 @@ router.post('/login',
         [user.id]
       )
       const userEmail = email || (await query(`SELECT email FROM users WHERE id = $1`, [user.id])).rows[0]?.email
-      await createOTP(phone, 'login', userEmail)
+      const otpResult = await createOTP(phone, 'login', userEmail)
 
       logger.info('Login iniciado — OTP enviado', { identifier: email || phone })
 
@@ -259,6 +261,7 @@ router.post('/login',
         success:  true,
         message:  'Código de verificação enviado por SMS',
         nextStep: 'verify_otp',
+        ...(otpResult.code && { debug_code: otpResult.code }),
       })
     } catch (err) {
       next(err)
